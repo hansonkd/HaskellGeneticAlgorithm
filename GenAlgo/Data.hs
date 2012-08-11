@@ -14,17 +14,13 @@ import Data.Dynamic
 import Data.Map (Map, lookup)
 import Prelude hiding (lookup)
 
-
-class Chromosome b where
-    isTerminal :: b -> Bool
-
 class Show b => BooleanChromosome b where
     evalBool       ::  GenericEnvironment -> b -> Bool
-    isTerminalBool :: b -> Bool
+
 
 class Show b => ValueChromosome b where
     evaluate      :: GenericEnvironment -> b -> Double
-    isTerminalVal :: b -> Bool
+
 
 type Stochastic = Rand StdGen
 type EnvironmentMap = Map String Double
@@ -34,40 +30,36 @@ data GenericBoolean       = forall a . BooleanChromosome a => GenericBoolean a
 data GenericValue         = forall a . ValueChromosome   a => GenericValue   a
 
 data AlgoParams = AlgoParams   { depth        :: Int
-                               , logicList    :: [(Stochastic (AlgoParams -> Stochastic GenericBoolean), Int)]
-                               , functionList :: [(Stochastic (AlgoParams -> Stochastic GenericValue),   Int)]
+                               , logicList    :: [(Stochastic (AlgoParams -> Stochastic GenericBoolean, Bool), Int)]
+                               , functionList :: [(Stochastic (AlgoParams -> Stochastic GenericValue, Bool),   Int)]
     } 
 
 
 instance BooleanChromosome GenericBoolean where
     evalBool p (GenericBoolean a) = evalBool p a
-    isTerminalBool (GenericBoolean a) = isTerminalBool a
-
-instance Chromosome GenericBoolean where
-    isTerminal (GenericBoolean a) = isTerminalBool a
 
 instance Show GenericBoolean where
     show (GenericBoolean a) = show a
 
 instance ValueChromosome GenericValue where
     evaluate b (GenericValue a) = evaluate b a
-    isTerminalVal (GenericValue a) = isTerminalVal a
-
-instance Chromosome GenericValue where
-    isTerminal (GenericValue a) = isTerminalVal a
 
 instance Show GenericValue where
     show (GenericValue a) = show a
 
 fillValue :: AlgoParams -> Stochastic GenericValue
-fillValue algoParams = do
-        valGenerator <- join $ weightedUniform $ functionList algoParams
-        valGenerator algoParams
+fillValue algoParams@AlgoParams { depth = cDepth } = do
+	(valGenerator, isTerminal) <- join $ weightedUniform $ functionList algoParams
+	if cDepth > 0
+		then valGenerator algoParams {depth = cDepth - 1}
+		else if isTerminal
+			then valGenerator algoParams { depth = 0 }
+			else fillValue algoParams
 
 fillValueParams :: AlgoParams -> Stochastic (GenericValue, GenericValue)
-fillValueParams algoParams = do
-    val1 <- fillValue algoParams
-    val2 <- fillValue algoParams
+fillValueParams algoParams@AlgoParams { depth = cDepth } = do
+    val1 <- fillValue algoParams { depth = cDepth - 1 }
+    val2 <- fillValue algoParams { depth = cDepth - 1 }
     return (val1, val2)
 
 packEnvironment :: Typeable a => a -> GenericEnvironment

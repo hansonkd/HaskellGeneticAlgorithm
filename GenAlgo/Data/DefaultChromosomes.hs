@@ -17,15 +17,13 @@ data LsT = LsT GenericValue GenericValue deriving (Show)
 
 instance BooleanChromosome Not where
     evalBool p c = (not $ evalBool p c) 
-    isTerminalBool _ = False
 	
 instance BooleanChromosome GrT where
     evalBool p (GrT fr sc) = ((evaluate p fr) > (evaluate p sc))
-    isTerminalBool _ = False
 	
 instance BooleanChromosome LsT where
     evalBool p (LsT fr sc) = ((evaluate p fr) < (evaluate p sc))
-    isTerminalBool _ = False
+
 
 	----------------------------------
 	-- Default Function Chromosomes --
@@ -39,36 +37,36 @@ data Divide   = Divide (GenericValue, GenericValue) deriving (Show)
 
 instance ValueChromosome ConstInt where
 	evaluate p (ConstInt i) = i
-	isTerminalVal _ = True
+
 
 instance ValueChromosome Add where
 	evaluate p (Add (x, y)) = ((evaluate p x) + (evaluate p y))
-	isTerminalVal _ = False
+
 
 instance ValueChromosome Subtract where
 	evaluate p (Subtract (x, y)) =((evaluate p x) - (evaluate p y))
-	isTerminalVal _ = False
+
 
 instance ValueChromosome Multiply where
 	evaluate p (Multiply (x, y)) = ((evaluate p x) * (evaluate p y))
-	isTerminalVal _ = False
+
 
 instance ValueChromosome Divide where
 	evaluate p (Divide (x, y)) = ((evaluate p x) / (evaluate p y))
-	isTerminalVal _ = False
 
-intChromosome :: (Int, Int) -> Stochastic (AlgoParams -> Stochastic GenericValue)
-intChromosome range = return (\_ -> packValue <$> ConstInt <$> fromIntegral <$> getRandomR range)
+
+intChromosome :: (Int, Int) -> Stochastic (AlgoParams -> Stochastic GenericValue, Bool)
+intChromosome range = return ((\_ -> packValue <$> ConstInt <$> fromIntegral <$> getRandomR range), True)
 	
-addChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue)
-addChromosome = return (\params -> packValue <$> Add <$> (fillValueParams params))
+addChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue, Bool)
+addChromosome = return ((\params -> packValue <$> Add <$> (fillValueParams params)), False)
 
-subtractChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue)
-subtractChromosome = return (\params -> packValue <$> Subtract <$> (fillValueParams params))
+subtractChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue, Bool)
+subtractChromosome = return ((\params -> packValue <$> Subtract <$> (fillValueParams params)), False)
 
-multiplyChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue)
-multiplyChromosome = return (\params -> packValue <$> Multiply <$> (fillValueParams params))
+multiplyChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue, Bool)
+multiplyChromosome = return ((\params -> packValue <$> Multiply <$> (fillValueParams params)), False)
 
-divideChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue)
-divideChromosome = return (\params -> packValue <$> Divide <$> (fillValueParams params))
+divideChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue, Bool)
+divideChromosome = return ((\params -> packValue <$> Divide <$> (fillValueParams params)), False)
 

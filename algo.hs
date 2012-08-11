@@ -14,10 +14,9 @@ data Open = Open deriving (Show)
 
 instance ValueChromosome Open where
     evaluate p a = fromIntegral $ open (unpackEnvironment p defaultEnvironment)
-    isTerminalVal _ = True
 
-openChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue)
-openChromosome = return (\params -> return $ packValue Open)
+openChromosome :: Stochastic (AlgoParams -> Stochastic GenericValue, Bool)
+openChromosome = return ((\params -> return $ packValue Open), True)
 
 
 data MyEnvironment = MyEnvironment { open  :: Int
@@ -31,7 +30,7 @@ myParams = AlgoParams { depth        = 5
                                        , (subtractChromosome,     1)
                                        , (multiplyChromosome,     1)
                                        , (divideChromosome,       1)
-                                       , (openChromosome,         5)
+                                       , (openChromosome,         1)
                                        ]
                       }
 
